@@ -1,0 +1,167 @@
+model:
+  sr: 44100
+  n_fft: 2048
+  bandsplits:
+  - - 500
+    - 50
+  - - 1000
+    - 100
+  - - 4000
+    - 500
+  - - 8000
+    - 1000
+  - - 16000
+    - 2000
+  bottleneck_layer: rnn
+  t_timesteps: 263
+  fc_dim: 128
+  rnn_dim: 256
+  rnn_type: LSTM
+  bidirectional: true
+  num_layers: 12
+  mlp_dim: 512
+  return_mask: false
+  complex_as_channel: true
+  is_mono: ${..train_dataset.is_mono}
+train_dataset:
+  file_dir: ${oc.env:MUSDB_DIR}
+  txt_dir: files/
+  txt_path: null
+  target: bass
+  is_training: true
+  is_mono: false
+  sr: 44100
+  preload_dataset: false
+  silent_prob: 0.01
+  mix_prob: 0.25
+  mix_tgt_too: false
+test_dataset:
+  in_fp: ${oc.env:MUSDB_DIR}
+  target: ${..train_dataset.target}
+  is_mono: false
+  sr: 44100
+  win_size: 3
+  hop_size: 0.5
+  batch_size: 4
+  window: null
+sad:
+  sr: 44100
+  window_size_in_sec: 6
+  overlap_ratio: 0.5
+  n_chunks_per_segment: 10
+  eps: 1.0e-05
+  gamma: 0.001
+  threshold_max_quantile: 0.15
+  threshold_segment: 0.5
+augmentations:
+  randomcrop:
+    _target_: data.augmentations.RandomCrop
+    p: 1
+    chunk_size_sec: 3
+    sr: 44100
+    window_stft: ${...featurizer.direct_transform.win_length}
+    hop_stft: ${...featurizer.direct_transform.hop_length}
+  gainscale:
+    _target_: data.augmentations.GainScale
+    p: 0.5
+    min_db: -10.0
+    max_db: 10.0
+featurizer:
+  direct_transform:
+    _target_: torchaudio.transforms.Spectrogram
+    n_fft: 2048
+    win_length: 2048
+    hop_length: 512
+    power: null
+  inverse_transform:
+    _target_: torchaudio.transforms.InverseSpectrogram
+    n_fft: 2048
+    win_length: 2048
+    hop_length: 512
+callbacks:
+  lr_monitor:
+    _target_: pytorch_lightning.callbacks.LearningRateMonitor
+    logging_interval: epoch
+  model_ckpt:
+    _target_: pytorch_lightning.callbacks.ModelCheckpoint
+    monitor: train/loss
+    mode: min
+    save_top_k: 5
+    dirpath: /weights
+    filename: epoch{epoch:02d}-train_loss{train/loss:.2f}
+    auto_insert_metric_name: false
+  model_ckpt_usdr:
+    _target_: pytorch_lightning.callbacks.ModelCheckpoint
+    monitor: train/usdr
+    mode: max
+    save_top_k: 5
+    dirpath: ${..model_ckpt.dirpath}
+    filename: epoch{epoch:02d}-train_usdr{train/usdr:.2f}
+    auto_insert_metric_name: false
+  early_stop:
+    _target_: pytorch_lightning.callbacks.EarlyStopping
+    monitor: train/loss
+    mode: min
+    patience: 20
+    min_delta: 0.0001
+  ema:
+    _target_: utils.callbacks.EMA
+    decay: 0.9999
+    validate_original_weights: false
+    every_n_steps: 1
+logger:
+  tensorboard:
+    _target_: pytorch_lightning.loggers.TensorBoardLogger
+    save_dir: /tb_logs
+    name: ''
+    version: ''
+    log_graph: false
+    default_hp_metric: false
+    prefix: ''
+  wandb:
+    _target_: pytorch_lightning.loggers.WandbLogger
+    project: MDX_BSRNN_23
+    name: ${train_dataset.target}
+    save_dir: wandb_logs
+    offline: false
+    id: null
+    log_model: false
+    prefix: ''
+    job_type: train
+    group: ''
+    tags: []
+train_loader:
+  batch_size: 4
+  num_workers: 16
+  shuffle: true
+  drop_last: true
+val_loader:
+  batch_size: 4
+  num_workers: 16
+  shuffle: false
+  drop_last: false
+opt:
+  _target_: torch.optim.Adam
+  lr: 0.001
+sch:
+  warmup_step: 10
+  alpha: 0.1
+  gamma: 0.9899494936611665
+ckpt_path: null
+trainer:
+  fast_dev_run: false
+  min_epochs: 30
+  max_epochs: 50
+  val_check_interval: 1
+  check_val_every_n_epoch: 1
+  num_sanity_val_steps: 5
+  log_every_n_steps: 10
+  accelerator: auto
+  devices: 2
+  gradient_clip_val: 5
+  precision: 32
+  enable_progress_bar: true
+  benchmark: true
+  deterministic: false
+experiment_dirname: bandsplitrnn
+wandb_api_key: ${oc.env:WANDB_API_KEY}

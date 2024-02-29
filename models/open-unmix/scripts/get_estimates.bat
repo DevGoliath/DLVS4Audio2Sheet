@@ -1,0 +1,4 @@
+umx ../../dataset/test/reference/Mix1/mixture.wav --model final_4s --targets bass tenor alto soprano --outdir ../../dataset/test/estimates/final_4s/Mix1
+umx ../../dataset/test/reference/Mix2/mixture.wav --model final_4s --targets bass tenor alto soprano --outdir ../../dataset/test/estimates/final_4s/Mix2
+umx ../../dataset/test/reference/cantoria_mix_1/mixture.wav --model final_4s --targets bass tenor alto soprano --outdir ../../dataset/test/estimates/final_4s/cantoria_mix_1
+umx ../../dataset/test/reference/cantoria_mix_2/mixture.wav --model final_4s --targets bass tenor alto soprano --outdir ../../dataset/test/estimates/final_4s/cantoria_mix_2

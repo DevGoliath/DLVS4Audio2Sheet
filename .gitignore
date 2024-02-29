@@ -1,0 +1,10 @@
+/datasets/csd/processed_csd
+/datasets/csd/ChoralSingingDataset
+/datasets/esmuc/processed_esmuc
+/datasets/esmuc/EsmucChoirDataset_v1.0.0
+/datasets/cantoria/CantoriaDataset_v1.0.0
+/datasets/combined_processed_dataset
+/datasets/combined_processed_dataset_converted_stereo
+/inference_results
+__pycache__/
+.DS_Store
